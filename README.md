@@ -1,3 +1,10 @@
+## Fork
+
+This fork changes the script to re-encode the clipped fragments as compressed `.webm` files instead. This is done with the intention of quickly creating clips for using online, for example. The quality and options can be easily adjusted by changing the parameters in the script yourself.
+
+It also fixes an issue with `ffmpeg` outputs not being Windows friendly and causing errors when clipping. The `:` in the filename is the cause of this, so this fork will use hyphens instead to be more OS-agnostic.
+
+## README
 `slicing.lua` is a Lua script for mpv to cut fragments of the video in uncompressed RGB format which might be useful for video editing.
 
 #### Usage
