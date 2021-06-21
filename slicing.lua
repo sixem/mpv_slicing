@@ -6,19 +6,22 @@ local cut_pos = nil
 local copy_audio = true
 local o = {
     target_dir = "~",
-    vcodec = "rawvideo",
-    acodec = "pcm_s16le",
-    prevf = "",
-    vf = "format=yuv444p16$hqvf,scale=in_color_matrix=$matrix,format=bgr24",
-    hqvf = "",
-    postvf = "",
+    vcodec = "libvpx",
+    acodec = "libvorbis",
+    vf = "scale='min(720,iw)':-1",
     opts = "",
-    ext = "avi",
+    ext = "webm",
+    qmin = "0",
+    qmax = "50",
+    crf = "10",
+    bitrate = "1M",
     command_template = [[
         ffmpeg -v warning -y -stats
         -ss $shift -i "$in" -t $duration
-        -c:v $vcodec -c:a $acodec $audio
-        -vf $prevf$vf$postvf $opts "$out.$ext"
+        -c:v $vcodec
+        -c:a $acodec
+        $audio$vf$qmin$qmax$crf$bitrate$opts
+        "$out.$ext"
     ]],
 }
 options.read_options(o)
@@ -62,18 +65,6 @@ function trim(str)
     return str:gsub("^%s+", ""):gsub("%s+$", "")
 end
 
-function get_csp()
-    local csp = mp.get_property("colormatrix")
-    if csp == "bt.601" then return "bt601"
-        elseif csp == "bt.709" then return "bt709"
-        elseif csp == "smpte-240m" then return "smpte240m"
-        else
-            local err = "Unknown colorspace: " .. csp
-            osd(err)
-            error(err)
-    end
-end
-
 function get_outname(shift, endpos)
     local name = mp.get_property("filename")
     local dotidx = name:reverse():find(".", 1, true)
@@ -82,6 +73,18 @@ function get_outname(shift, endpos)
     name = name:gsub(":", "-")
     name = name .. string.format(".%s-%s", timestamp(shift), timestamp(endpos))
     return name
+end
+
+function ternary(cond, T, F)
+    if cond then return T else return F end
+end
+
+function set_if_exists(opt, para)
+    if opt ~= nil and opt ~= "" then
+        return para .. opt
+    else
+        return ""
+    end
 end
 
 function cut(shift, endpos)
@@ -97,17 +100,22 @@ function cut(shift, endpos)
     cmd = cmd:gsub("$duration", endpos - shift)
     cmd = cmd:gsub("$vcodec", o.vcodec)
     cmd = cmd:gsub("$acodec", o.acodec)
-    cmd = cmd:gsub("$audio", copy_audio and "" or "-an")
-    cmd = cmd:gsub("$prevf", o.prevf)
-    cmd = cmd:gsub("$vf", o.vf)
-    cmd = cmd:gsub("$hqvf", o.hqvf)
-    cmd = cmd:gsub("$postvf", o.postvf)
-    cmd = cmd:gsub("$matrix", get_csp())
-    cmd = cmd:gsub("$opts", o.opts)
+    cmd = cmd:gsub("$audio", copy_audio and "" or " -an")
+    cmd = cmd:gsub("$vf", set_if_exists(o.vf, " -vf "))
+    cmd = cmd:gsub("$qmin", set_if_exists(o.qmin, " -qmin "))
+    cmd = cmd:gsub("$qmax", set_if_exists(o.qmax, " -qmax "))
+    cmd = cmd:gsub("$crf", set_if_exists(o.crf, " -crf "))
+    cmd = cmd:gsub("$bitrate", set_if_exists(o.bitrate, " -b:v "))
+    cmd = cmd:gsub("$opts", set_if_exists(o.opts, " "))
     -- Beware that input/out filename may contain replacing patterns.
     cmd = cmd:gsub("$ext", o.ext)
     cmd = cmd:gsub("$out", outpath)
     cmd = cmd:gsub("$in", inpath, 1)
+
+    osd(string.format(
+        "Fragment: %s to %s (%s seconds)\n\nSaving clip to:\n%s.%s",
+        shift, endpos, endpos - shift, outpath, o.ext
+    ))
 
     msg.info(cmd)
     log(cmd)
