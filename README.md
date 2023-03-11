@@ -4,6 +4,10 @@ This fork changes the script to re-encode the clipped fragments as compressed `.
 
 It also fixes an issue with `ffmpeg` outputs not being Windows friendly and causing errors when clipping. The `:` in the filename is the cause of this, so this fork will use hyphens instead to be more OS-agnostic.
 
+---
+
+`slicing-raw.lua` is an alternative script that creates clips from a video source, functioning in the same way as the original script. However, this script simply copies and audio and video and outputs them to a file with the same extension as the input source. This is just a way of creating raw clips from a video.
+
 ## README
 `slicing.lua` is a Lua script for mpv to cut fragments of the video in uncompressed RGB format which might be useful for video editing.
 
