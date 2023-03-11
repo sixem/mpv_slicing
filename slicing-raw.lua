@@ -142,5 +142,5 @@ function toggle_audio()
     osd("[Raw-Slicing] Audio capturing is " .. (copy_audio and "enabled" or "disabled"))
 end
 
-mp.add_key_binding("p", "slicing_mark", toggle_mark)
-mp.add_key_binding("å", "slicing_audio", toggle_audio)
+mp.add_key_binding("c", "slicing_mark", toggle_mark)
+mp.add_key_binding("b", "slicing_audio", toggle_audio)
