@@ -3,19 +3,19 @@ local utils = require "mp.utils"
 local options = require "mp.options"
 
 local cut_pos = nil
-local copy_audio = true
+local copy_audio = false
 local o = {
     target_dir = "~",
-    codec = "copy",
-    opts = "",
-    ext = ".mp4",
+    ext = "mp4",
     command_template = [[
         ffmpeg -v warning -y -stats
         -ss $shift -i "$in" -t $duration
-        -c:v $codec
-        -map 0
+        -c:v libx264
+        -c:a aac
+        -crf 18
+        -preset slower
         $audio
-        "$out$ext"
+        "$out.$ext"
     ]],
 }
 options.read_options(o)
@@ -46,11 +46,6 @@ end
 
 function trim(str)
     return str:gsub("^%s+", ""):gsub("%s+$", "")
-end
-
-function get_extension()
-    local name = mp.get_property("filename")
-    return name:match("^.+(%..+)$")
 end
 
 function get_outname(shift, endpos)
@@ -88,19 +83,13 @@ function cut(shift, endpos)
 
     local duration = (endpos - shift)
 
-    local extension = get_extension()
-
     cmd = cmd:gsub("$shift", shift)
 
     cmd = cmd:gsub("$duration", duration)
 
-    cmd = cmd:gsub("$codec", o.codec)
-
     cmd = cmd:gsub("$audio", copy_audio and "" or " -an")
 
-    cmd = cmd:gsub("$opts", set_if_exists(o.opts, " "))
-
-    cmd = cmd:gsub("$ext", extension and extension or o.ext)
+    cmd = cmd:gsub("$ext", o.ext)
 
     cmd = cmd:gsub("$out", outpath)
 
@@ -112,7 +101,19 @@ function cut(shift, endpos)
     ))
 
     msg.info(cmd)
+    log(cmd)
     os.execute(cmd)
+end
+
+function log(str)
+    local logpath = utils.join_path(
+        o.target_dir:gsub("~", get_homedir()),
+        "mpv_slicing.log")
+    f = io.open(logpath, "a")
+    f:write(string.format("# %s\n%s\n",
+        os.date("%Y-%m-%d %H:%M:%S"),
+        str))
+    f:close()
 end
 
 function toggle_mark()
@@ -143,4 +144,4 @@ function toggle_audio()
 end
 
 mp.add_key_binding("c", "slicing_mark", toggle_mark)
-mp.add_key_binding("b", "slicing_audio", toggle_audio)
+mp.add_key_binding("a", "slicing_audio", toggle_audio)
