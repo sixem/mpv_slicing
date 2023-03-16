@@ -6,7 +6,7 @@ It also fixes an issue with `ffmpeg` outputs not being Windows friendly and caus
 
 ---
 
-`slicing-raw.lua` is an alternative script that creates clips from a video source, functioning in the same way as the original script. However, this script simply copies the audio and video, and outputs them to a file with the same extension as the input source. This is just a way of creating raw clips from a video quickly, without affecting the source quality in any way.
+`slicing-h264.lua` is an alternative script that creates clips from a video source, functioning in the same way as the original script. However, this script simply copies the audio (if toggled) and video, and outputs them to a H264-encoded file. This is just a way of creating raw clips from a video quickly, without affecting the source quality in any big way.
 
 ## README
 `slicing.lua` is a Lua script for mpv to cut fragments of the video in uncompressed RGB format which might be useful for video editing.
